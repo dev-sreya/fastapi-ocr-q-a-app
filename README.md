@@ -1,0 +1,1 @@
+# fastapi-ocr-q-a-app
