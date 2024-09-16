@@ -1,0 +1,133 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+<body>
+  <div class="container">
+    <div class="jumbotron">
+     
+      <h1> OCR Tool </h1>
+      <p> Extract text from Images <p>
+    </div>
+    <label for="image_file">Select image(s)</label>
+    <input class="btn btn-warning" type="file" id="image_file" name="myfile" multiple>
+    <br>
+    <button class="btn btn-success" onclick="performOCR()"> Extract Text </button>
+    <br>
+    <hr style="width:100%;text-align:left;margin-left:0">
+    <hr style="width:100%;text-align:left;margin-left:0">
+    <div id="bulk_result" style="display: grid; grid-template-columns: repeat(5, 1fr); grid-gap: 10px;">
+
+      <label for="txt_file">Ask Question(s)</label>
+      <input class="form-control" type="text" id="txt_file" name="myf" placeholder="Type your question here">
+      <br>
+      <button class="btn btn-primary" onclick="askQuestion()">Ask Question</button>
+  
+      <hr>
+      
+      <div id="answer_box" style="display: none;">
+        <h3>Answer:</h3>
+        <div id="answer_text" class="well"></div>
+      </div>
+  </div>
+</body>
+
+<script>
+ 
+  function performOCR() {
+    var files = document.getElementById("image_file").files
+    var formData = new FormData();
+    var endpoint = '/api/v1/extract_text';
+    if (files.length == 1) {
+      formData.append('image', files[0])
+    }
+    else {
+      for (var i = 0; i < files.length; i++) {
+        formData.append('image' + i.toString(), files[i])
+      }
+      endpoint = '/api/v1/bulk_extract_text';
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: endpoint,
+        data: formData,
+        contentType: false,
+        cache: false,
+        processData: false,
+        success: function(data) {
+          if (endpoint == '/api/v1/extract_text') {
+            swal("Converted Text", data.text);
+          }
+          else {
+            swal("Request Recieved", "Converted files will start showing up at the bottom soon!");
+            getConvertedFiles(data.task_id, data.num_files);
+          }
+        }
+    });
+  }
+
+  function getConvertedFiles(taskID, numFiles) {
+    var checker = setInterval(function(){
+      $.ajax({
+          type: 'GET',
+          url: '/api/v1/bulk_output/' + taskID,
+          contentType: false,
+          cache: false,
+          processData: false,
+          success: function(data) {
+            wrapper = document.getElementById("bulk_result")
+            for (var key in data.output) {
+              var element = document.createElement("button");
+              element.setAttribute("class", "btn btn-primary")
+              element.setAttribute("info", data.output[key])
+              element.setAttribute("id", key)
+              element.setAttribute("onclick", "displayText(this.id)")
+              element.innerHTML = key
+              wrapper.appendChild(element)
+            }
+            if (Object.keys(data.output).length == numFiles) {
+                stopChecker()
+            }
+          }
+      });
+    }, 3000);
+
+    function stopChecker() {
+      clearInterval(checker)
+    }
+  }
+
+function displayText(id) {
+  swal("Converted Text", document.getElementById(id).getAttribute("info"))
+}
+
+function askQuestion() {
+    var question = document.getElementById("txt_file").value;
+    var endpoint = '/api/v1/ask';
+    var token = localStorage.getItem("token");
+    if (!question) {
+      swal("Error", "Please enter a question", "error");
+      return;
+    }
+
+    $.ajax({
+      type: 'POST',
+      url: endpoint,
+      contentType: 'application/json',
+      data: JSON.stringify({ question: question }),
+      headers: {
+      'Authorization': `Bearer ${token}`
+    },
+      success: function(response) {
+        // Show the answer in the dedicated div
+        document.getElementById("answer_box").style.display = "block";
+        document.getElementById("answer_text").innerText = response.answer;
+      },
+      error: function() {
+        swal("Error", "Something went wrong while asking the question!", "error");
+      }
+    });
+  }
+</script>
+
