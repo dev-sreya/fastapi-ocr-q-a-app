@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="jumbotron">
+      <h1>Login</h1>
+      <input type="text" id="username" placeholder="Username" class="form-control" />
+      <input type="password" id="password" placeholder="Password" class="form-control" />
+      <button class="btn btn-primary" onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <script>
+    function login() {
+      var username = document.getElementById("username").value;
+      var password = document.getElementById("password").value;
+
+      $.ajax({
+        type: "POST",
+        url: "/api/v1/login",
+        contentType: "application/x-www-form-urlencoded",
+        data: `username=${username}&password=${password}`,
+        success: function(response) {
+          localStorage.setItem("token", response.access_token);
+          swal("Success", "Login successful!", "success").then(() => {
+            window.location.href = "/main";
+          });
+        },
+        error: function() {
+          swal("Error", "Login failed!", "error");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
