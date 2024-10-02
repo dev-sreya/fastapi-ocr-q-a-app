@@ -3,7 +3,7 @@
 https://github.com/user-attachments/assets/e24b3871-a976-4f61-b98c-1af680b766a6
 
 
-#Functionality
+# Functionality
 
 - user authentication page
 - Image upload from local storage to convert into text
